@@ -1,0 +1,189 @@
+{
+  "name": "1st",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "https://YOUR_N8N_URL/webhook/viral-clipper",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "fa58a923-f658-4223-a2c2-fe9569e57216",
+      "name": "Webhook",
+      "webhookId": "cbb0d06e-ee09-4255-b02f-d7f36bdb3c73"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/topaz_sharingan~youtube-transcript-scraper-1/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "apify_api_taxmcF4BhsHRnGDxwRQH8MYViZmnGR4e9yHZ"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startUrls\": [\n    \"{{ $json.body.url }}\"\n  ],\n  \"includeTimestamps\": \"Yes\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        -144
+      ],
+      "id": "1e906d0e-7dc0-45c0-873e-59709561c001",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "lEXbA9202MOxgti4",
+          "name": "Query Auth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the output array from the previous node (HTTP Request)\n// This array contains objects like { timestamp: \"...\", text: \"...\" }\nconst transcriptSegments = $input.first().json;\n\n// Check if transcriptSegments is actually an array (for safety)\nif (!Array.isArray(transcriptSegments)) {\n  console.error(\"Expected transcript array, but got:\", transcriptSegments);\n  // Return an empty transcript if the structure is wrong\n  return [{ json: { transcript: \"\" } }];\n}\n\n// Extract the 'text' property from each segment object in the array\nconst fullTranscript = transcriptSegments\n  .map(segment => segment.text) // Access the 'text' from each object\n  .join(\" \"); // Join them with spaces\n\n// Return the combined transcript\nreturn [\n  {\n    json: {\n      transcript: fullTranscript\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -144
+      ],
+      "id": "ef17adf1-88db-4860-9b9e-afb15de40a5b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the video transcript:\n\n{{ $json.transcript }}\n\n---\nPlease analyze this transcript and give me the 5 most \"viral\" 30-second segments based on the rules in your system message.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        32
+      ],
+      "id": "9a54d49b-7218-4d49-9cd4-57d730cbaeff",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        224
+      ],
+      "id": "d6f8d4d7-16eb-4cca-b343-1d8f2ca99d92",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Vx4XEDjP1CdqhKyC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        96
+      ],
+      "id": "79ff1011-6c0a-4fd5-9d02-b2a938f05598",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "4e422387-fea0-4959-8eb9-704515936007",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fbe32afb3809b1572ba98b06c4eade3970dbb843df5203cb895a07d0f3de2262"
+  },
+  "id": "JnS2PIRFbtOWHQDN",
+  "tags": []
+}
