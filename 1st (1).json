@@ -1,0 +1,213 @@
+{
+  "name": "1st",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "https://YOUR_N8N_URL/webhook/viral-clipper",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "fa58a923-f658-4223-a2c2-fe9569e57216",
+      "name": "Webhook",
+      "webhookId": "cbb0d06e-ee09-4255-b02f-d7f36bdb3c73"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/topaz_sharingan~youtube-transcript-scraper-1/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "apify_api_taxmcF4BhsHRnGDxwRQH8MYViZmnGR4e9yHZ"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startUrls\": [\n    \"{{ $json.body.url }}\"\n  ],\n  \"includeTimestamps\": \"Yes\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        -144
+      ],
+      "id": "1e906d0e-7dc0-45c0-873e-59709561c001",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "lEXbA9202MOxgti4",
+          "name": "Query Auth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the transcript array from the INPUT item\n// It's inside the 'json' property, under the key 'transcript'\nconst transcriptSegments = $input.first().json.transcript;\n\n// Check if transcriptSegments is actually an array (for safety)\nif (!Array.isArray(transcriptSegments)) {\n  console.error(\"Input data at json.transcript was not an array:\", transcriptSegments);\n  // Return an empty transcript if the structure is wrong\n  return [{ json: { transcript: \"\" } }];\n}\n\n// Extract the 'text' property from each segment object in the array\nconst fullTranscript = transcriptSegments\n  .map(segment => segment.text) // Access the 'text' from each object in the array\n  .join(\" \"); // Join them with spaces\n\n// Return the combined transcript under the key 'transcript'\nreturn [\n  {\n    json: {\n      transcript: fullTranscript\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        -144
+      ],
+      "id": "ef17adf1-88db-4860-9b9e-afb15de40a5b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert \"Viral Video Clipper\" agent. Your job is to analyze a video transcript and identify the 5 most engaging, viral segments.\n\nYou MUST output ONLY a valid JSON array containing exactly 5 objects.\nDO NOT include any introductory text, explanations, greetings, summaries, or any other text before or after the JSON array.\nYour entire response must start with `[` and end with `]`.\n\nEach object in the array must have these EXACT keys: \"title\", \"start_time\", \"end_time\".\n- \"title\": A short, catchy title for the 30-second clip.\n- \"start_time\": The start timestamp (e.g., \"00:01:23\").\n- \"end_time\": The end timestamp (30 seconds after start_time, e.g., \"00:01:53\").\n\nExample of the required EXACT output format:\n[\n  {\n    \"title\": \"Catchy Title 1\",\n    \"start_time\": \"00:01:23\",\n    \"end_time\": \"00:01:53\"\n  },\n  {\n    \"title\": \"Catchy Title 2\",\n    \"start_time\": \"00:05:10\",\n    \"end_time\": \"00:05:40\"\n  },\n  {\n    \"title\": \"Catchy Title 3\",\n    \"start_time\": \"00:12:45\",\n    \"end_time\": \"00:13:15\"\n  },\n  {\n    \"title\": \"Catchy Title 4\",\n    \"start_time\": \"00:20:02\",\n    \"end_time\": \"00:20:32\"\n  },\n  {\n    \"title\": \"Catchy Title 5\",\n    \"start_time\": \"00:25:55\",\n    \"end_time\": \"00:26:25\"\n  }\n]",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        32
+      ],
+      "id": "9a54d49b-7218-4d49-9cd4-57d730cbaeff",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-001",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        224
+      ],
+      "id": "d6f8d4d7-16eb-4cca-b343-1d8f2ca99d92",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Vx4XEDjP1CdqhKyC",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        704,
+        32
+      ],
+      "id": "79ff1011-6c0a-4fd5-9d02-b2a938f05598",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw output string from the AI Agent\nconst rawOutput = $input.first().json.output;\nlet jsonString = rawOutput;\n\n// Attempt to remove markdown code fences if present\njsonString = jsonString.replace(/^```json\\s*/, '').replace(/\\s*```$/, '');\n\n// Trim whitespace from start and end\njsonString = jsonString.trim();\n\n// Find the first '[' and the last ']' to isolate the array string\nconst firstBracket = jsonString.indexOf('[');\nconst lastBracket = jsonString.lastIndexOf(']');\n\nlet finalClips = []; // Default to empty array\n\nif (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {\n  // Extract the potential JSON array string\n  const potentialJsonArrayString = jsonString.substring(firstBracket, lastBracket + 1);\n\n  try {\n    // Attempt to parse the extracted string\n    parsedJson = JSON.parse(potentialJsonArrayString);\n    // Only assign if parsing is successful AND it's an array\n    if (Array.isArray(parsedJson)) {\n      finalClips = parsedJson;\n    } else {\n       console.error(\"Parsed JSON is not an array:\", parsedJson);\n    }\n  } catch (error) {\n    console.error(\"Failed to parse extracted JSON string:\", error);\n    console.error(\"Extracted string was:\", potentialJsonArrayString);\n    // Keep finalClips as empty array on error\n  }\n} else {\n  console.error(\"Could not find valid JSON array brackets '[...]' in AI output:\", jsonString);\n  // Keep finalClips as empty array if brackets not found\n}\n\n// Return the successfully parsed JSON array (or empty array on failure)\n// Wrap it in the expected n8n structure\nreturn [{ json: { finalClips: finalClips } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        160
+      ],
+      "id": "a457e769-6f07-4e48-884a-b3db2e80be67",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "baa7cadf-13de-4205-8695-6cafc9ed0a6c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fbe32afb3809b1572ba98b06c4eade3970dbb843df5203cb895a07d0f3de2262"
+  },
+  "id": "JnS2PIRFbtOWHQDN",
+  "tags": []
+}
